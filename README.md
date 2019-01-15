@@ -31,3 +31,24 @@ rspec-timing-tool split --current-split 0 --total-splits 5 rspec-parsed.txt
 # ./spec/models/filter_spec.rb ./spec/workers/automatic_spec.rb ./spec/lib/shard_spec.rb ./spec/lib/one_signal/utils_spec.rb ./spec/controllers/bee_free_controller_spec.rb ./spec/lib/database_spec.rb
 rspec-timing-tool split --current-split 3 --total-splits 5 rspec-parsed.txt
 ```
+
+# CircleCI
+This tool was built to replace CircleCI's built-in method of test splitting as it
+was doing a very poor job of balancing the containers (and there was no way to reset
+the cached timing data).
+
+Here's the suggested way from the docs (https://circleci.com/docs/2.0/parallelism-faster-jobs/#running-split-tests):
+```bash
+TESTFILES=$(circleci tests glob "spec/**/*.rb" | circleci tests split --split-by=timings)
+bundle exec rspec -- ${TESTFILES}
+```
+
+Here's an example of how to use it in your `.circleci/config.yml`:
+```bash
+TESTFILES=$(rspec-timing-tool split --total-splits $CIRCLE_NODE_TOTAL --current-split $CIRCLE_NODE_INDEX rspec-parsed.txt)
+bundle exec rspec -- ${TESTFILES}
+```
+
+This assumes that you have the `rspec-timing-tool` built for your container in
+the working directory and that your parsed timing data is in a file named
+`rspec-parsed.txt` in the working directory.
