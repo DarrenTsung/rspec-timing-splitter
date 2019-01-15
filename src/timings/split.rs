@@ -4,11 +4,12 @@ use crate::timings::FileTiming;
 /// the buckets as much as possible.
 ///
 /// This is a deterministic algorithm and must always produce the same result for multiple runs.
-pub fn split_timings(mut timings: Vec<FileTiming>, total_splits: u32) -> Vec<Vec<FileTiming>> {
+pub fn split_timings(timings: &[FileTiming], total_splits: u32) -> Vec<Vec<FileTiming>> {
     if total_splits == 0 {
         return vec![];
     }
 
+    let mut timings = timings.iter().cloned().collect::<Vec<_>>();
     // descending order
     timings.sort_by(|a, b| b.total_time.partial_cmp(&a.total_time).unwrap());
 
