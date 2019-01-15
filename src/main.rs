@@ -15,9 +15,12 @@ fn main() -> Result<(), failure::Error> {
             output_file,
         } => {
             let rspec_output = fs::read_to_string(rspec_file)?;
-            let _file_timings = timings::parse_rspec_output(rspec_output);
+
+            let file_timings = timings::parse_rspec_output(rspec_output)?;
+            let timings_json = serde_json::to_string(&file_timings)?;
+
             let mut output_file = File::create(output_file)?;
-            output_file.write_all(b"Hello, world!")?;
+            output_file.write_all(timings_json.as_bytes())?;
         }
         Opt::Split {
             total_splits: _,
