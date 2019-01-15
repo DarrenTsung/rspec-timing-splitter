@@ -6,6 +6,7 @@ mod opt;
 mod timings;
 
 use crate::opt::Opt;
+use crate::timings::FileTiming;
 
 fn main() -> Result<(), failure::Error> {
     let opt = Opt::from_args();
@@ -23,10 +24,34 @@ fn main() -> Result<(), failure::Error> {
             output_file.write_all(timings_json.as_bytes())?;
         }
         Opt::Split {
-            total_splits: _,
-            current_split: _,
-            timing_file: _,
-        } => {}
+            total_splits,
+            current_split,
+            timing_file,
+        } => {
+            let timing_output = fs::read_to_string(timing_file)?;
+            let file_timings: Vec<FileTiming> = serde_json::from_str(&timing_output)?;
+
+            if current_split == 0 || current_split > total_splits {
+                println!(
+                    "Error: current split should be between 1 and total_splits, got {}.",
+                    current_split
+                );
+                return Ok(());
+            }
+
+            let bucket = {
+                let mut bucketed_timings = timings::split_timings(file_timings, total_splits);
+                bucketed_timings.remove(current_split as usize)
+            };
+            println!(
+                "{}",
+                bucket
+                    .into_iter()
+                    .map(|timing| timing.file_path)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            );
+        }
     }
 
     Ok(())
