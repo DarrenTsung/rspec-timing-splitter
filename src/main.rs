@@ -51,9 +51,10 @@ fn main() -> Result<(), failure::Error> {
             let timing_output = fs::read_to_string(timing_file)?;
             let file_timings: Vec<FileTiming> = serde_json::from_str(&timing_output)?;
 
-            if current_split == 0 || current_split > total_splits {
+            if current_split >= total_splits {
                 println!(
-                    "Error: current split should be between 1 and total_splits, got {}.",
+                    "Error: current split should be between [0..{}), got {}.",
+                    total_splits,
                     current_split
                 );
                 return Ok(());
@@ -61,7 +62,7 @@ fn main() -> Result<(), failure::Error> {
 
             let bucket = {
                 let mut bucketed_timings = timings::split_timings(&file_timings, total_splits);
-                bucketed_timings.remove(current_split as usize - 1)
+                bucketed_timings.remove(current_split as usize)
             };
             print!(
                 "{}",
@@ -72,7 +73,7 @@ fn main() -> Result<(), failure::Error> {
                     .join(" ")
             );
 
-            if current_split == total_splits {
+            if current_split == total_splits - 1 {
                 print!(
                     " {}",
                     paths_not_covered_by_timings(&file_timings)?
