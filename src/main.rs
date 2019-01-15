@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 mod opt;
@@ -51,6 +52,37 @@ fn main() -> Result<(), failure::Error> {
                     .collect::<Vec<_>>()
                     .join(" ")
             );
+        }
+        Opt::Analyze {
+            total_splits,
+            timing_file,
+        } => {
+            let timing_output = fs::read_to_string(timing_file)?;
+            let file_timings: Vec<FileTiming> = serde_json::from_str(&timing_output)?;
+            let bucketed_timings = timings::split_timings(file_timings, total_splits);
+
+            for (index, bucket) in bucketed_timings.into_iter().enumerate() {
+                let bucket_total_time: f64 = bucket.iter().map(|t| t.total_time).sum();
+                let file_names = bucket
+                    .into_iter()
+                    .map(|t| {
+                        let file_stem = PathBuf::from(t.file_path)
+                            .file_stem()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_string();
+                        format!("{}:{:.2}s", file_stem, t.total_time)
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                println!(
+                    "[BUCKET {} - {:.2}s] {}",
+                    index + 1,
+                    bucket_total_time,
+                    file_names
+                );
+            }
         }
     }
 

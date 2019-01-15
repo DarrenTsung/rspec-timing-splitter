@@ -33,4 +33,14 @@ pub enum Opt {
         #[structopt(parse(from_os_str))]
         timing_file: PathBuf,
     },
+    #[structopt(name = "analyze")]
+    Analyze {
+        /// Number of total splits the timing data is split into
+        #[structopt(short = "s", long = "total-splits")]
+        total_splits: u32,
+
+        /// Input file of parsed timing information
+        #[structopt(parse(from_os_str))]
+        timing_file: PathBuf,
+    },
 }
