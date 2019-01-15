@@ -5,3 +5,7 @@ authors = ["Darren Tsung <darren@onesignal.com>"]
 edition = "2018"
 
 [dependencies]
+structopt = "0.2.14"
+failure = "0.1.5"
+lazy_static = "1.2.0"
+regex = "1.1.0"
