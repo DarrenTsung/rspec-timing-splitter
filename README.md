@@ -52,3 +52,12 @@ bundle exec rspec -- ${TESTFILES}
 This assumes that you have the `rspec-timing-tool` built for your container in
 the working directory and that your parsed timing data is in a file named
 `rspec-parsed.txt` in the working directory.
+
+# (Anecdotal) Results
+Before this tool our test timings were skewed terribly and not balancing at all,
+even though we push many changes per day. The latest build was split between 4 containers
+that finished in 3:49, 5:15, 12:24, and 11:39 respectively.
+
+After the changes, we had 4 containers finish in 8:10, 7:41, 8:20, and 9:29 respectively.
+Obviously, it's not perfectly balanced as the tests can take different amounts of time
+and we're balancing off of a single run of all the tests, but it's much better.
