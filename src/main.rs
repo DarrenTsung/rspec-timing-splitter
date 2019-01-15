@@ -17,11 +17,16 @@ fn paths_not_covered_by_timings(timings: &[FileTiming]) -> Result<Vec<PathBuf>, 
         .collect::<HashSet<_>>();
 
     let mut not_covered_paths = HashSet::new();
-    for entry in fs::read_dir("./spec")? {
-        let entry = entry?;
-        let path = entry.path();
-        if !covered_paths.contains(&path) {
-            not_covered_paths.insert(path);
+    let mut dirs_to_read = vec![fs::read_dir("./spec")?];
+    while let Some(dir) = dirs_to_read.pop() {
+        for entry in dir {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                dirs_to_read.push(fs::read_dir(path)?);
+            } else if !covered_paths.contains(&path) {
+                not_covered_paths.insert(path);
+            }
         }
     }
 
@@ -54,8 +59,7 @@ fn main() -> Result<(), failure::Error> {
             if current_split >= total_splits {
                 println!(
                     "Error: current split should be between [0..{}), got {}.",
-                    total_splits,
-                    current_split
+                    total_splits, current_split
                 );
                 return Ok(());
             }
