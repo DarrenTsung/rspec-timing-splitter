@@ -16,7 +16,7 @@ pub enum Opt {
         rspec_file: PathBuf,
 
         /// Output file of timing information
-        #[structopt(parse(from_os_str), short = "o")]
+        #[structopt(parse(from_os_str), short = "o", long = "output")]
         output_file: PathBuf,
     },
     #[structopt(name = "split")]
@@ -26,7 +26,7 @@ pub enum Opt {
         total_splits: u32,
 
         /// Current split needed to output files
-        #[structopt(short = "c", long = "current-splits")]
+        #[structopt(short = "c", long = "current-split")]
         current_split: u32,
 
         /// Input file of parsed timing information
