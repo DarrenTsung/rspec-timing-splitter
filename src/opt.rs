@@ -3,7 +3,7 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "rspec-timing",
+    name = "rspec-timing-tool",
     about = "A tool to help split rspec files by timings."
 )]
 pub enum Opt {
@@ -11,7 +11,7 @@ pub enum Opt {
     Parse {
         /// Input file of rspec timing information
         /// Ex. 'bundle exec rspec --format RspecJunitFormatter -o rspec-results.xml'
-        /// Then becomes: './rspec-timing split rspec-results.xml'
+        /// Then rspec_file is: rspec-results.xml
         #[structopt(parse(from_os_str))]
         rspec_file: PathBuf,
 

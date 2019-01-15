@@ -1,5 +1,5 @@
 [package]
-name = "rspec-timing-splitter"
+name = "rspec-timing-tool"
 version = "0.1.0"
 authors = ["Darren Tsung <darren@onesignal.com>"]
 edition = "2018"

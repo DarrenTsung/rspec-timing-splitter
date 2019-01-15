@@ -178,7 +178,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rspec-timing-splitter"
+name = "rspec-timing-tool"
 version = "0.1.0"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
