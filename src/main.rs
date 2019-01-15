@@ -24,8 +24,11 @@ fn paths_not_covered_by_timings(timings: &[FileTiming]) -> Result<Vec<PathBuf>, 
             let path = entry.path();
             if path.is_dir() {
                 dirs_to_read.push(fs::read_dir(path)?);
-            } else if !covered_paths.contains(&path) {
-                not_covered_paths.insert(path);
+            } else {
+                let file_stem = get_file_stem(&path);
+                if file_stem.ends_with("_spec") && !covered_paths.contains(&path) {
+                    not_covered_paths.insert(path);
+                }
             }
         }
     }
@@ -105,7 +108,7 @@ fn main() -> Result<(), failure::Error> {
                 let mut file_names = bucket
                     .into_iter()
                     .map(|t| {
-                        let file_stem = get_file_stem(PathBuf::from(t.file_path));
+                        let file_stem = get_file_stem(&PathBuf::from(t.file_path));
                         format!("{}:{:.2}s", file_stem, t.total_time)
                     })
                     .collect::<Vec<_>>();
@@ -118,7 +121,7 @@ fn main() -> Result<(), failure::Error> {
                     file_names.append(
                         &mut paths_not_covered_by_timings
                             .into_iter()
-                            .map(|p| format!("{}:NA", get_file_stem(p)))
+                            .map(|p| format!("{}:NA", get_file_stem(&p)))
                             .collect::<Vec<_>>(),
                     );
                 }
@@ -142,6 +145,6 @@ fn main() -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get_file_stem(path: PathBuf) -> String {
+fn get_file_stem(path: &PathBuf) -> String {
     path.file_stem().unwrap().to_str().unwrap().to_string()
 }
