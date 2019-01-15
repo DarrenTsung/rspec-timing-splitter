@@ -10,32 +10,6 @@ mod timings;
 use crate::opt::Opt;
 use crate::timings::FileTiming;
 
-fn paths_not_covered_by_timings(timings: &[FileTiming]) -> Result<Vec<PathBuf>, failure::Error> {
-    let covered_paths = timings
-        .iter()
-        .map(|t| PathBuf::from(t.file_path.clone()))
-        .collect::<HashSet<_>>();
-
-    let mut not_covered_paths = HashSet::new();
-    let mut dirs_to_read = vec![fs::read_dir("./spec")?];
-    while let Some(dir) = dirs_to_read.pop() {
-        for entry in dir {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                dirs_to_read.push(fs::read_dir(path)?);
-            } else {
-                let file_stem = get_file_stem(&path);
-                if file_stem.ends_with("_spec") && !covered_paths.contains(&path) {
-                    not_covered_paths.insert(path);
-                }
-            }
-        }
-    }
-
-    Ok(not_covered_paths.into_iter().collect())
-}
-
 fn main() -> Result<(), failure::Error> {
     let opt = Opt::from_args();
     match opt {
@@ -57,7 +31,7 @@ fn main() -> Result<(), failure::Error> {
             timing_file,
         } => {
             let timing_output = fs::read_to_string(timing_file)?;
-            let file_timings: Vec<FileTiming> = serde_json::from_str(&timing_output)?;
+            let file_timings = load_file_timings(timing_output)?;
 
             if current_split >= total_splits {
                 println!(
@@ -71,11 +45,12 @@ fn main() -> Result<(), failure::Error> {
                 let mut bucketed_timings = timings::split_timings(&file_timings, total_splits);
                 bucketed_timings.remove(current_split as usize)
             };
+
             print!(
                 "{}",
                 bucket
                     .into_iter()
-                    .map(|timing| timing.file_path)
+                    .map(|t| t.file_path)
                     .collect::<Vec<_>>()
                     .join(" ")
             );
@@ -100,7 +75,7 @@ fn main() -> Result<(), failure::Error> {
             let mut non_covered_paths = 0;
 
             let timing_output = fs::read_to_string(timing_file)?;
-            let file_timings: Vec<FileTiming> = serde_json::from_str(&timing_output)?;
+            let file_timings = load_file_timings(timing_output)?;
             let bucketed_timings = timings::split_timings(&file_timings, total_splits);
 
             for (index, bucket) in bucketed_timings.into_iter().enumerate() {
@@ -143,6 +118,51 @@ fn main() -> Result<(), failure::Error> {
     }
 
     Ok(())
+}
+
+fn load_file_timings(timing_output: String) -> Result<Vec<FileTiming>, failure::Error> {
+    let mut file_timings: Vec<FileTiming> = serde_json::from_str(&timing_output)?;
+    let spec_paths = read_specs_recursively()?
+        .into_iter()
+        .collect::<HashSet<_>>();
+    file_timings.retain(|t| spec_paths.contains(&PathBuf::from(&t.file_path)));
+    Ok(file_timings)
+}
+
+fn paths_not_covered_by_timings(timings: &[FileTiming]) -> Result<Vec<PathBuf>, failure::Error> {
+    let covered_paths = timings
+        .iter()
+        .map(|t| PathBuf::from(t.file_path.clone()))
+        .collect::<HashSet<_>>();
+
+    let mut not_covered_paths = HashSet::new();
+    for spec_path in read_specs_recursively()? {
+        if !covered_paths.contains(&spec_path) {
+            not_covered_paths.insert(spec_path);
+        }
+    }
+
+    Ok(not_covered_paths.into_iter().collect())
+}
+
+fn read_specs_recursively() -> Result<Vec<PathBuf>, failure::Error> {
+    let mut specs = vec![];
+    let mut dirs_to_read = vec![fs::read_dir("./spec")?];
+    while let Some(dir) = dirs_to_read.pop() {
+        for entry in dir {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                dirs_to_read.push(fs::read_dir(path)?);
+            } else {
+                let file_stem = get_file_stem(&path);
+                if file_stem.ends_with("_spec") {
+                    specs.push(path);
+                }
+            }
+        }
+    }
+    Ok(specs)
 }
 
 fn get_file_stem(path: &PathBuf) -> String {
