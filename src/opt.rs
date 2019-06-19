@@ -43,4 +43,10 @@ pub enum Opt {
         #[structopt(parse(from_os_str))]
         timing_file: PathBuf,
     },
+    #[structopt(name = "output-missing")]
+    OutputMissing {
+        /// Input file of parsed timing information
+        #[structopt(parse(from_os_str))]
+        timing_file: PathBuf,
+    },
 }

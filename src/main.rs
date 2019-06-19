@@ -115,6 +115,14 @@ fn main() -> Result<(), failure::Error> {
                 )
             }
         }
+        Opt::OutputMissing { timing_file } => {
+            let timing_output = fs::read_to_string(timing_file)?;
+            let file_timings = load_file_timings(timing_output)?;
+            let paths_not_covered_by_timings = paths_not_covered_by_timings(&file_timings)?;
+            for path in paths_not_covered_by_timings {
+                println!("{}", path.to_str().unwrap());
+            }
+        }
     }
 
     Ok(())
