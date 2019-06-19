@@ -60,9 +60,9 @@ mod tests {
         timings: Vec<FileTiming>,
         total_splits: u32,
     ) -> Vec<Vec<FileTiming>> {
-        let first_result = split_timings(timings.clone(), total_splits);
+        let first_result = split_timings(&timings, total_splits);
         for _ in 0..10 {
-            assert_eq!(first_result, split_timings(timings.clone(), total_splits));
+            assert_eq!(first_result, split_timings(&timings, total_splits));
         }
         first_result
     }
