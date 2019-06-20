@@ -19,6 +19,21 @@ pub enum Opt {
         #[structopt(parse(from_os_str), short = "o", long = "output")]
         output_file: PathBuf,
     },
+    #[structopt(name = "split-pre-bucketed")]
+    SplitPreBucketed {
+        /// Number of total splits the timing data is split into
+        #[structopt(short = "s", long = "total-splits")]
+        total_splits: u32,
+
+        /// Current split needed to output files
+        #[structopt(short = "c", long = "current-split")]
+        current_split: u32,
+
+        /// Read splits from pre-bucketed file, useful for
+        /// manual balancing.
+        #[structopt(parse(from_os_str))]
+        pre_bucketed_file: PathBuf,
+    },
     #[structopt(name = "split")]
     Split {
         /// Number of total splits the timing data is split into
@@ -38,6 +53,10 @@ pub enum Opt {
         /// Number of total splits the timing data is split into
         #[structopt(short = "s", long = "total-splits")]
         total_splits: u32,
+
+        /// Dump buckets into an output file
+        #[structopt(parse(from_os_str), short = "o", long = "output")]
+        output_file: Option<PathBuf>,
 
         /// Input file of parsed timing information
         #[structopt(parse(from_os_str))]

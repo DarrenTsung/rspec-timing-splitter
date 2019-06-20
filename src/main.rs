@@ -25,6 +25,35 @@ fn main() -> Result<(), failure::Error> {
             let mut output_file = File::create(output_file)?;
             output_file.write_all(timings_json.as_bytes())?;
         }
+        Opt::SplitPreBucketed {
+            total_splits,
+            current_split,
+            pre_bucketed_file,
+        } => {
+            let pre_bucketed_file_clone = pre_bucketed_file.clone();
+            let mut bucketed_filenames: Vec<Vec<(String, Option<f64>)>> =
+                serde_json::from_str(&fs::read_to_string(pre_bucketed_file)?)?;
+
+            let current_split = current_split as usize;
+            if current_split >= bucketed_filenames.len() {
+                println!(
+                        "Error: when reading from pre-bucketed file: {:?} - current split should be between [0..{}), got {}.",
+                        pre_bucketed_file_clone, total_splits, current_split
+                    );
+                return Ok(());
+            }
+
+            println!(
+                "{}",
+                bucketed_filenames
+                    .remove(current_split)
+                    .into_iter()
+                    .map(|(f, _)| f)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            );
+            return Ok(());
+        }
         Opt::Split {
             total_splits,
             current_split,
@@ -70,6 +99,7 @@ fn main() -> Result<(), failure::Error> {
         }
         Opt::Analyze {
             total_splits,
+            output_file,
             timing_file,
         } => {
             let mut non_covered_paths = 0;
@@ -77,9 +107,14 @@ fn main() -> Result<(), failure::Error> {
             let timing_output = fs::read_to_string(timing_file)?;
             let file_timings = load_file_timings(timing_output)?;
             let bucketed_timings = timings::split_timings(&file_timings, total_splits);
+            let mut bucketed_filenames = vec![];
 
             for (index, bucket) in bucketed_timings.into_iter().enumerate() {
                 let bucket_total_time: f64 = bucket.iter().map(|t| t.total_time).sum();
+                let mut full_file_names = bucket
+                    .iter()
+                    .map(|t| (t.file_path.to_string(), Some(t.total_time)))
+                    .collect::<Vec<_>>();
                 let mut file_names = bucket
                     .into_iter()
                     .map(|t| {
@@ -93,6 +128,12 @@ fn main() -> Result<(), failure::Error> {
                     if !paths_not_covered_by_timings.is_empty() {
                         non_covered_paths = paths_not_covered_by_timings.len();
                     }
+                    full_file_names.append(
+                        &mut paths_not_covered_by_timings
+                            .iter()
+                            .map(|p| (p.to_str().unwrap().to_string(), None))
+                            .collect::<Vec<_>>(),
+                    );
                     file_names.append(
                         &mut paths_not_covered_by_timings
                             .into_iter()
@@ -106,6 +147,8 @@ fn main() -> Result<(), failure::Error> {
                     bucket_total_time,
                     file_names.join(", ")
                 );
+
+                bucketed_filenames.push(full_file_names)
             }
 
             if non_covered_paths > 0 {
@@ -113,6 +156,13 @@ fn main() -> Result<(), failure::Error> {
                     "WARNING: Found {} non-covered paths, please re-run split timing script to fix!",
                     non_covered_paths
                 )
+            }
+
+            if let Some(output_file) = output_file {
+                let bucketed_filenames = serde_json::to_string(&bucketed_filenames)?;
+
+                let mut output_file = File::create(output_file)?;
+                output_file.write_all(bucketed_filenames.as_bytes())?;
             }
         }
         Opt::OutputMissing { timing_file } => {
