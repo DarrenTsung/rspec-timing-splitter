@@ -31,7 +31,7 @@ fn main() -> Result<(), failure::Error> {
             pre_bucketed_file,
         } => {
             let pre_bucketed_file_clone = pre_bucketed_file.clone();
-            let mut bucketed_filenames: Vec<Vec<(String, Option<f64>)>> =
+            let bucketed_filenames: Vec<Vec<(String, Option<f64>)>> =
                 serde_json::from_str(&fs::read_to_string(pre_bucketed_file)?)?;
 
             let current_split = current_split as usize;
@@ -45,13 +45,29 @@ fn main() -> Result<(), failure::Error> {
 
             println!(
                 "{}",
-                bucketed_filenames
-                    .remove(current_split)
-                    .into_iter()
-                    .map(|(f, _)| f)
+                bucketed_filenames[current_split]
+                    .iter()
+                    .map(|(f, _)| f.to_owned())
                     .collect::<Vec<_>>()
                     .join(" ")
             );
+
+            if current_split == bucketed_filenames.len() - 1 {
+                let all_covered_file_paths = bucketed_filenames
+                    .into_iter()
+                    .flat_map(|v| v.into_iter().map(|(f, _)| PathBuf::from(f)))
+                    .collect::<HashSet<_>>();
+
+                print!(
+                    " {}",
+                    paths_not_covered(all_covered_file_paths)?
+                        .into_iter()
+                        .map(|p| p.to_str().unwrap().to_string())
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                )
+            }
+
             return Ok(());
         }
         Opt::Split {
@@ -193,6 +209,10 @@ fn paths_not_covered_by_timings(timings: &[FileTiming]) -> Result<Vec<PathBuf>, 
         .map(|t| PathBuf::from(t.file_path.clone()))
         .collect::<HashSet<_>>();
 
+    paths_not_covered(covered_paths)
+}
+
+fn paths_not_covered(covered_paths: HashSet<PathBuf>) -> Result<Vec<PathBuf>, failure::Error> {
     let mut not_covered_paths = HashSet::new();
     for spec_path in read_specs_recursively()? {
         if !covered_paths.contains(&spec_path) {
