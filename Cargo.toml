@@ -12,3 +12,6 @@ regex = "1.1.0"
 serde_json = "1.0.35"
 serde = "1.0.84"
 serde_derive = "1.0.84"
+
+[dev-dependencies]
+log = "0.4.6"
